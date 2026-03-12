@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pulse | Minimal Life Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
+        .tap-active:active { transform: scale(0.95); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans min-h-screen pb-10">
+
+    <header class="p-6 max-w-md mx-auto flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl font-black tracking-tight text-indigo-600">PULSE</h1>
+            <p id="current-date" class="text-slate-500 font-medium"></p>
+        </div>
+        <button onclick="resetDay()" class="text-xs text-slate-400 underline">Reset Day</button>
+    </header>
+
+    <main class="max-w-md mx-auto px-6 space-y-6">
+        
+        <section class="glass p-5 rounded-3xl shadow-sm border border-white">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3">Current Energy</h3>
+            <input type="range" id="energy" min="1" max="10" value="5" 
+                class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+            <div class="flex justify-between text-xs mt-2 text-slate-500">
+                <span>Low</span>
+                <span>Peak</span>
+            </div>
+        </section>
+
+        <section>
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3 px-1">Quick Habits</h3>
+            <div class="grid grid-cols-3 gap-3">
+                <button onclick="toggleHabit(this)" class="tap-active glass p-4 rounded-2xl border border-white shadow-sm flex flex-col items-center gap-2 transition-all">
+                    <span class="text-2xl">💧</span>
+                    <span class="text-xs font-semibold">Hydrate</span>
+                </button>
+                <button onclick="toggleHabit(this)" class="tap-active glass p-4 rounded-2xl border border-white shadow-sm flex flex-col items-center gap-2 transition-all">
+                    <span class="text-2xl">💊</span>
+                    <span class="text-xs font-semibold">Vitamins</span>
+                </button>
+                <button onclick="toggleHabit(this)" class="tap-active glass p-4 rounded-2xl border border-white shadow-sm flex flex-col items-center gap-2 transition-all">
+                    <span class="text-2xl">🧘</span>
+                    <span class="text-xs font-semibold">Meditate</span>
+                </button>
+            </div>
+        </section>
+
+        <section class="glass p-5 rounded-3xl shadow-sm border border-white">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3">Top Priorities</h3>
+            <div id="todo-list" class="space-y-3">
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" class="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                    <input type="text" placeholder="Deep work session..." class="bg-transparent border-none focus:ring-0 w-full text-sm">
+                </div>
+                <div class="flex items-center gap-3 border-t border-slate-100 pt-3">
+                    <input type="checkbox" class="w-5 h-5 rounded border-slate-300 text-indigo-600">
+                    <input type="text" placeholder="Health/Exercise..." class="bg-transparent border-none focus:ring-0 w-full text-sm">
+                </div>
+                <div class="flex items-center gap-3 border-t border-slate-100 pt-3">
+                    <input type="checkbox" class="w-5 h-5 rounded border-slate-300 text-indigo-600">
+                    <input type="text" placeholder="Urgent Admin..." class="bg-transparent border-none focus:ring-0 w-full text-sm">
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3 px-1">Brain Dump</h3>
+            <textarea id="notes" rows="4" placeholder="Fleeting thoughts, lunch costs, or ideas..." 
+                class="w-full glass p-4 rounded-3xl border border-white shadow-sm focus:ring-2 focus:ring-indigo-400 outline-none text-sm"></textarea>
+        </section>
+
+    </main>
+
+    <script>
+        // Set Date
+        const options = { weekday: 'long', month: 'short', day: 'numeric' };
+        document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', options);
+
+        // Habit Toggle Logic
+        function toggleHabit(btn) {
+            btn.classList.toggle('bg-indigo-600');
+            btn.classList.toggle('text-white');
+            btn.classList.toggle('border-indigo-600');
+            saveData();
+        }
+
+        // Persistence Logic
+        function saveData() {
+            const data = {
+                energy: document.getElementById('energy').value,
+                notes: document.getElementById('notes').value
+            };
+            localStorage.setItem('pulse_data', JSON.stringify(data));
+        }
+
+        function resetDay() {
+            if(confirm("Clear today's logs?")) {
+                localStorage.removeItem('pulse_data');
+                location.reload();
+            }
+        }
+
+        // Auto-save on input
+        document.querySelectorAll('input, textarea').forEach(el => {
+            el.addEventListener('input', saveData);
+        });
+    </script>
+</body>
+</html>
