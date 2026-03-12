@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuizCraft — Teacher Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;0,900;1,300&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #0f0e0c;
+    --paper: #faf7f2;
+    --cream: #f0ebe0;
+    --amber: #d4841a;
+    --amber-light: #f5c567;
+    --amber-pale: #fdf3dc;
+    --green: #2d7a4f;
+    --green-light: #e8f5ee;
+    --red: #c0392b;
+    --red-light: #fdecea;
+    --slate: #5a5650;
+    --border: #ddd8ce;
+    --shadow: 0 2px 12px rgba(15,14,12,0.08);
+    --shadow-lg: 0 8px 40px rgba(15,14,12,0.14);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* ── NOISE TEXTURE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── TOP NAV ── */
+  header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 0 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px;
+    position: sticky; top: 0; z-index: 100;
+    border-bottom: 3px solid var(--amber);
+  }
+  .logo {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: 1.4rem;
+    letter-spacing: -0.5px;
+    color: var(--amber-light);
+  }
+  .logo span { color: var(--paper); }
+  .nav-tabs { display: flex; gap: 0; }
+  .nav-tab {
+    background: none; border: none; color: #aaa;
+    font-family: 'DM Mono', monospace; font-size: 0.78rem; font-weight: 500;
+    padding: 0 1.2rem; height: 60px; cursor: pointer;
+    border-bottom: 3px solid transparent; margin-bottom: -3px;
+    transition: all 0.2s; text-transform: uppercase; letter-spacing: 1px;
+  }
+  .nav-tab:hover { color: var(--amber-light); }
+  .nav-tab.active { color: var(--amber-light); border-bottom-color: var(--amber); }
+
+  /* ── MAIN LAYOUT ── */
+  main { max-width: 1100px; margin: 0 auto; padding: 2.5rem 1.5rem; position: relative; z-index: 1; }
+
+  .screen { display: none; }
+  .screen.active { display: block; animation: fadeUp 0.35s ease; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+
+  /* ── SECTION HEADERS ── */
+  .section-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 2rem;
+    color: var(--ink);
+    margin-bottom: 0.25rem;
+  }
+  .section-sub {
+    color: var(--slate); font-size: 0.9rem; margin-bottom: 2rem;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1.75rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 1.5rem;
+  }
+  .card-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600; font-size: 1.1rem;
+    margin-bottom: 1.25rem;
+    display: flex; align-items: center; gap: 0.6rem;
+  }
+  .card-title .num {
+    background: var(--amber); color: white;
+    width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace; font-size: 0.75rem; font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  /* ── FORM ── */
+  label { font-size: 0.82rem; font-weight: 500; color: var(--slate); display: block; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.5px; font-family: 'DM Mono', monospace; }
+  input[type="text"], textarea, select {
+    width: 100%; border: 1.5px solid var(--border);
+    border-radius: 8px; padding: 0.65rem 0.9rem;
+    font-family: 'DM Sans', sans-serif; font-size: 0.92rem;
+    background: var(--paper); color: var(--ink);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  input[type="text"]:focus, textarea:focus, select:focus {
+    border-color: var(--amber); box-shadow: 0 0 0 3px rgba(212,132,26,0.12);
+  }
+  textarea { resize: vertical; min-height: 70px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+  .form-group { margin-bottom: 1rem; }
+
+  /* ── ANSWER OPTIONS ── */
+  .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-top: 0.5rem; }
+  .option-item {
+    display: flex; align-items: center; gap: 0.5rem;
+    border: 1.5px solid var(--border); border-radius: 8px;
+    padding: 0.5rem 0.7rem; background: var(--paper);
+    transition: border-color 0.2s;
+  }
+  .option-item:focus-within { border-color: var(--amber); }
+  .option-letter {
+    font-family: 'DM Mono', monospace; font-size: 0.78rem; font-weight: 500;
+    color: var(--amber); width: 18px; flex-shrink: 0;
+  }
+  .option-item input[type="text"] {
+    border: none; background: transparent; padding: 0;
+    font-size: 0.88rem; box-shadow: none;
+  }
+  .correct-radio { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.75rem; }
+  .correct-radio label { margin: 0; text-transform: none; font-size: 0.85rem; }
+  .correct-select {
+    width: auto; padding: 0.35rem 0.6rem; font-size: 0.85rem;
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 500;
+    padding: 0.65rem 1.4rem; border-radius: 8px; border: none; cursor: pointer;
+    transition: all 0.18s; display: inline-flex; align-items: center; gap: 0.5rem;
+    text-decoration: none;
+  }
+  .btn-primary { background: var(--amber); color: white; }
+  .btn-primary:hover { background: #b8710f; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(212,132,26,0.35); }
+  .btn-secondary { background: white; color: var(--ink); border: 1.5px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--amber); color: var(--amber); }
+  .btn-danger { background: var(--red-light); color: var(--red); border: 1.5px solid #f5c5c0; }
+  .btn-danger:hover { background: var(--red); color: white; }
+  .btn-green { background: var(--green); color: white; }
+  .btn-green:hover { background: #235f3c; transform: translateY(-1px); }
+  .btn-sm { padding: 0.4rem 0.85rem; font-size: 0.8rem; }
+  .btn-row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-top: 1.5rem; }
+
+  /* ── QUIZ INFO BANNER ── */
+  .quiz-meta {
+    background: var(--amber-pale);
+    border: 1.5px solid var(--amber-light);
+    border-radius: 10px; padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  }
+  .quiz-meta-item { font-family: 'DM Mono', monospace; font-size: 0.8rem; color: var(--slate); }
+  .quiz-meta-item strong { color: var(--ink); }
+  .quiz-meta-sep { color: var(--border); }
+
+  /* ── SHARE CODE ── */
+  .share-box {
+    background: var(--ink); color: var(--amber-light);
+    border-radius: 10px; padding: 1.25rem 1.5rem;
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    margin: 1.5rem 0;
+  }
+  .share-code {
+    font-family: 'Fraunces', serif; font-size: 2.5rem; font-weight: 900;
+    letter-spacing: 6px; color: white;
+  }
+  .share-label { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: #888; text-transform: uppercase; margin-bottom: 0.25rem; }
+
+  /* ── PARTICIPANTS TABLE ── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  thead tr { background: var(--cream); border-bottom: 2px solid var(--border); }
+  th { text-align: left; padding: 0.75rem 1rem; font-family: 'DM Mono', monospace; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--slate); font-weight: 500; }
+  td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--amber-pale); }
+  .score-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 38px; height: 38px; border-radius: 50%;
+    font-family: 'DM Mono', monospace; font-weight: 500; font-size: 0.85rem;
+    border: 2px solid currentColor;
+  }
+  .score-high { color: var(--green); background: var(--green-light); }
+  .score-mid { color: var(--amber); background: var(--amber-pale); }
+  .score-low { color: var(--red); background: var(--red-light); }
+  .status-pill {
+    display: inline-block; padding: 0.2rem 0.65rem; border-radius: 20px;
+    font-size: 0.75rem; font-family: 'DM Mono', monospace; font-weight: 500;
+  }
+  .pill-done { background: var(--green-light); color: var(--green); }
+  .pill-progress { background: var(--amber-pale); color: #a06010; }
+  .pill-waiting { background: var(--cream); color: var(--slate); }
+
+  /* ── STATS GRID ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+  .stat-card {
+    background: white; border: 1.5px solid var(--border); border-radius: 10px;
+    padding: 1.1rem 1.2rem;
+  }
+  .stat-val { font-family: 'Fraunces', serif; font-size: 2rem; font-weight: 900; color: var(--ink); line-height: 1; }
+  .stat-label { font-family: 'DM Mono', monospace; font-size: 0.72rem; text-transform: uppercase; color: var(--slate); margin-top: 0.3rem; }
+
+  /* ── STUDENT QUIZ VIEW ── */
+  .quiz-container { max-width: 680px; margin: 0 auto; }
+  .progress-bar-wrap { background: var(--cream); border-radius: 4px; height: 6px; margin-bottom: 2rem; }
+  .progress-bar-fill { background: var(--amber); height: 100%; border-radius: 4px; transition: width 0.4s; }
+  .q-card {
+    background: white; border: 1.5px solid var(--border);
+    border-radius: 14px; padding: 2rem; box-shadow: var(--shadow-lg);
+    animation: fadeUp 0.3s ease;
+  }
+  .q-num { font-family: 'DM Mono', monospace; font-size: 0.78rem; color: var(--slate); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px; }
+  .q-text { font-family: 'Fraunces', serif; font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; line-height: 1.4; }
+  .q-options { display: flex; flex-direction: column; gap: 0.65rem; }
+  .q-option {
+    border: 2px solid var(--border); border-radius: 10px;
+    padding: 0.85rem 1rem; cursor: pointer; display: flex; align-items: center; gap: 0.85rem;
+    transition: all 0.18s; background: white;
+  }
+  .q-option:hover { border-color: var(--amber); background: var(--amber-pale); }
+  .q-option.selected { border-color: var(--amber); background: var(--amber-pale); }
+  .q-option.correct { border-color: var(--green); background: var(--green-light); }
+  .q-option.wrong { border-color: var(--red); background: var(--red-light); }
+  .q-opt-letter {
+    width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace; font-size: 0.78rem; font-weight: 500;
+    flex-shrink: 0; transition: all 0.18s;
+  }
+  .q-option:hover .q-opt-letter, .q-option.selected .q-opt-letter { border-color: var(--amber); color: var(--amber); }
+  .q-option.correct .q-opt-letter { border-color: var(--green); color: var(--green); }
+  .q-option.wrong .q-opt-letter { border-color: var(--red); color: var(--red); }
+  .q-opt-text { font-size: 0.92rem; }
+
+  /* ── RESULT SCREEN ── */
+  .result-hero {
+    text-align: center; padding: 2.5rem 1rem;
+    background: white; border-radius: 16px; border: 1.5px solid var(--border);
+    box-shadow: var(--shadow-lg); margin-bottom: 1.5rem;
+  }
+  .result-score-ring {
+    width: 110px; height: 110px; border-radius: 50%;
+    border: 6px solid var(--amber); margin: 0 auto 1rem;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .result-score-num { font-family: 'Fraunces', serif; font-size: 2.2rem; font-weight: 900; line-height: 1; }
+  .result-score-denom { font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--slate); }
+  .result-title { font-family: 'Fraunces', serif; font-size: 1.5rem; font-weight: 600; }
+  .result-pct { font-family: 'DM Mono', monospace; font-size: 0.9rem; color: var(--slate); margin-top: 0.3rem; }
+
+  /* ── JOIN SCREEN ── */
+  .join-wrap {
+    max-width: 420px; margin: 4rem auto;
+    background: white; border-radius: 16px; border: 1.5px solid var(--border);
+    padding: 2.5rem; box-shadow: var(--shadow-lg); text-align: center;
+  }
+  .join-logo { font-family: 'Fraunces', serif; font-weight: 900; font-size: 1.6rem; color: var(--amber); margin-bottom: 1.5rem; }
+  .join-wrap h2 { font-family: 'Fraunces', serif; font-size: 1.6rem; font-weight: 600; margin-bottom: 0.5rem; }
+  .join-wrap p { color: var(--slate); font-size: 0.88rem; margin-bottom: 1.5rem; }
+  .code-input {
+    text-align: center; font-family: 'Fraunces', serif;
+    font-size: 2.5rem; font-weight: 900; letter-spacing: 8px;
+    text-transform: uppercase;
+  }
+
+  /* ── EMPTY STATE ── */
+  .empty { text-align: center; padding: 3rem 1rem; color: var(--slate); }
+  .empty .empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+  .empty p { font-size: 0.9rem; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 2rem; right: 2rem;
+    background: var(--ink); color: var(--paper);
+    padding: 0.75rem 1.25rem; border-radius: 8px;
+    font-size: 0.85rem; font-family: 'DM Mono', monospace;
+    box-shadow: var(--shadow-lg); z-index: 999;
+    animation: toastIn 0.3s ease;
+    border-left: 4px solid var(--amber);
+  }
+  @keyframes toastIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 700px) {
+    .form-row { grid-template-columns: 1fr; }
+    .options-grid { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .share-code { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Quiz<span>Craft</span></div>
+  <nav class="nav-tabs" id="navTabs">
+    <button class="nav-tab active" data-screen="createScreen">✏️ Create</button>
+    <button class="nav-tab" data-screen="dashScreen">📊 Dashboard</button>
+    <button class="nav-tab" data-screen="joinScreen">🎓 Student View</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ══════════════════════════════════════
+       SCREEN 1: CREATE QUIZ
+  ══════════════════════════════════════ -->
+  <section class="screen active" id="createScreen">
+    <h1 class="section-title">Build Your Quiz</h1>
+    <p class="section-sub">// Fill in 5 questions, set answers, publish.</p>
+
+    <div class="card">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Quiz Title</label>
+          <input type="text" id="quizTitle" placeholder="e.g. Chapter 4: Cell Biology" />
+        </div>
+        <div class="form-group">
+          <label>Subject / Class</label>
+          <input type="text" id="quizSubject" placeholder="e.g. Biology 101" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Time Limit (minutes, 0 = none)</label>
+          <input type="text" id="quizTime" placeholder="10" value="10" />
+        </div>
+        <div class="form-group">
+          <label>Teacher Name</label>
+          <input type="text" id="teacherName" placeholder="Ms. Johnson" />
+        </div>
+      </div>
+    </div>
+
+    <div id="questionsWrap"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="publishQuiz()">🚀 Publish Quiz</button>
+      <button class="btn btn-secondary" onclick="resetForm()">↺ Reset</button>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       SCREEN 2: TEACHER DASHBOARD
+  ══════════════════════════════════════ -->
+  <section class="screen" id="dashScreen">
+    <h1 class="section-title">Dashboard</h1>
+    <p class="section-sub" id="dashSub">// No quiz published yet.</p>
+
+    <div id="dashContent">
+      <div class="empty">
+        <div class="empty-icon">📋</div>
+        <p>Publish a quiz first to see participant data here.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       SCREEN 3: STUDENT / JOIN VIEW
+  ══════════════════════════════════════ -->
+  <section class="screen" id="joinScreen">
+    <div id="joinEntry">
+      <div class="join-wrap">
+        <div class="join-logo">QuizCraft</div>
+        <h2>Join a Quiz</h2>
+        <p>Enter the 6-digit code given by your teacher</p>
+        <div class="form-group">
+          <input type="text" class="code-input" id="joinCode" maxlength="6" placeholder="ABC123" />
+        </div>
+        <div class="form-group" style="margin-top:1rem;">
+          <label>Your Name</label>
+          <input type="text" id="joinName" placeholder="First Last" />
+        </div>
+        <div style="margin-top:1.25rem;">
+          <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="joinQuiz()">Enter Quiz →</button>
+        </div>
+      </div>
+    </div>
+    <div id="quizRunner" style="display:none;"></div>
+  </section>
+
+</main>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════
+const state = {
+  quiz: null,          // published quiz object
+  participants: [],    // array of participant result objects
+  sessionCode: null,
+};
+
+// ═══════════════════════════════════════════════════════
+//  NAV
+// ═══════════════════════════════════════════════════════
+document.querySelectorAll('.nav-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.screen).classList.add('active');
+    if (tab.dataset.screen === 'dashScreen') renderDashboard();
+  });
+});
+
+function switchTab(id) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.screen === id));
+  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+  if (id === 'dashScreen') renderDashboard();
+}
+
+// ═══════════════════════════════════════════════════════
+//  BUILD QUESTION CARDS
+// ═══════════════════════════════════════════════════════
+const LETTERS = ['A','B','C','D'];
+function buildQuestionCards() {
+  const wrap = document.getElementById('questionsWrap');
+  wrap.innerHTML = '';
+  for (let i = 1; i <= 5; i++) {
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.innerHTML = `
+      <div class="card-title"><span class="num">${i}</span> Question ${i}</div>
+      <div class="form-group">
+        <label>Question Text</label>
+        <textarea id="q${i}_text" placeholder="Type your question here…"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Answer Choices</label>
+        <div class="options-grid">
+          ${LETTERS.map(l => `
+            <div class="option-item">
+              <span class="option-letter">${l}</span>
+              <input type="text" id="q${i}_opt${l}" placeholder="Option ${l}" />
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div class="correct-radio">
+        <label>Correct Answer:</label>
+        <select class="correct-select" id="q${i}_correct">
+          ${LETTERS.map(l => `<option value="${l}">${l}</option>`).join('')}
+        </select>
+      </div>
+    `;
+    wrap.appendChild(div);
+  }
+}
+buildQuestionCards();
+
+// ═══════════════════════════════════════════════════════
+//  PUBLISH QUIZ
+// ═══════════════════════════════════════════════════════
+function publishQuiz() {
+  const title = document.getElementById('quizTitle').value.trim();
+  const subject = document.getElementById('quizSubject').value.trim();
+  const teacher = document.getElementById('teacherName').value.trim();
+  const timeLimit = parseInt(document.getElementById('quizTime').value) || 0;
+
+  if (!title) { toast('Please enter a quiz title.'); return; }
+
+  const questions = [];
+  for (let i = 1; i <= 5; i++) {
+    const text = document.getElementById(`q${i}_text`).value.trim();
+    if (!text) { toast(`Question ${i} is empty.`); return; }
+    const opts = {};
+    for (const l of LETTERS) {
+      const v = document.getElementById(`q${i}_opt${l}`).value.trim();
+      if (!v) { toast(`Question ${i}: Option ${l} is empty.`); return; }
+      opts[l] = v;
+    }
+    questions.push({ text, opts, correct: document.getElementById(`q${i}_correct`).value });
+  }
+
+  state.sessionCode = Math.random().toString(36).substr(2, 6).toUpperCase();
+  state.quiz = { title, subject, teacher, timeLimit, questions, createdAt: new Date() };
+  state.participants = [];
+
+  toast('✅ Quiz published! Share the code with students.');
+  setTimeout(() => switchTab('dashScreen'), 900);
+}
+
+function resetForm() {
+  document.getElementById('quizTitle').value = '';
+  document.getElementById('quizSubject').value = '';
+  document.getElementById('quizTime').value = '10';
+  document.getElementById('teacherName').value = '';
+  buildQuestionCards();
+  toast('Form reset.');
+}
+
+// ═══════════════════════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════════════════════
+function renderDashboard() {
+  const dc = document.getElementById('dashContent');
+  const sub = document.getElementById('dashSub');
+
+  if (!state.quiz) {
+    sub.textContent = '// No quiz published yet.';
+    dc.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><p>Publish a quiz first to see participant data here.</p></div>`;
+    return;
+  }
+
+  const q = state.quiz;
+  const p = state.participants;
+  sub.textContent = `// ${q.title} — ${q.subject || 'No subject'} · ${p.length} participant${p.length !== 1 ? 's' : ''}`;
+
+  const done = p.filter(x => x.status === 'done');
+  const avgScore = done.length ? (done.reduce((a,b) => a + b.score, 0) / done.length).toFixed(1) : '—';
+  const perfect = done.filter(x => x.score === 5).length;
+  const highPct = done.length ? Math.round((done.filter(x => x.score >= 4).length / done.length) * 100) : 0;
+
+  // Per-question correct count
+  const qStats = q.questions.map((_, qi) => {
+    const correct = done.filter(px => px.answers && px.answers[qi] === q.questions[qi].correct).length;
+    return done.length ? Math.round((correct / done.length) * 100) : 0;
+  });
+
+  dc.innerHTML = `
+    <div class="quiz-meta">
+      <div class="quiz-meta-item"><strong>${q.title}</strong></div>
+      <div class="quiz-meta-sep">|</div>
+      <div class="quiz-meta-item">Teacher: <strong>${q.teacher || '—'}</strong></div>
+      <div class="quiz-meta-sep">|</div>
+      <div class="quiz-meta-item">Subject: <strong>${q.subject || '—'}</strong></div>
+      <div class="quiz-meta-sep">|</div>
+      <div class="quiz-meta-item">Time limit: <strong>${q.timeLimit ? q.timeLimit + ' min' : 'None'}</strong></div>
+    </div>
+
+    <div class="share-box">
+      <div>
+        <div class="share-label">Share this code with students</div>
+        <div class="share-code">${state.sessionCode}</div>
+      </div>
+      <div style="text-align:right;">
+        <button class="btn btn-secondary btn-sm" style="background:rgba(255,255,255,0.1);border-color:#555;color:#ccc;" onclick="copyCode()">📋 Copy Code</button>
+        <div style="font-family:'DM Mono',monospace;font-size:0.75rem;color:#666;margin-top:0.5rem;">Students enter this in the "Student View" tab</div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-val">${p.length}</div>
+        <div class="stat-label">Total Joined</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val">${done.length}</div>
+        <div class="stat-label">Completed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val">${avgScore}</div>
+        <div class="stat-label">Avg Score / 5</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val">${perfect}</div>
+        <div class="stat-label">Perfect Scores</div>
+      </div>
+    </div>
+
+    <!-- Per-question accuracy -->
+    <div class="card" style="margin-bottom:1.5rem;">
+      <div class="card-title">📊 Question Accuracy</div>
+      ${q.questions.map((qq, qi) => `
+        <div style="margin-bottom:0.85rem;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:0.3rem;font-size:0.82rem;">
+            <span style="color:var(--slate);font-family:'DM Mono',monospace;">Q${qi+1}</span>
+            <span style="font-weight:500;">${qStats[qi]}% correct</span>
+          </div>
+          <div style="background:var(--cream);border-radius:4px;height:8px;">
+            <div style="width:${qStats[qi]}%;background:${qStats[qi]>=70?'var(--green)':qStats[qi]>=40?'var(--amber)':'var(--red)'};height:100%;border-radius:4px;transition:width 0.6s;"></div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <!-- Participants Table -->
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+        <span>👥 Participants</span>
+        <button class="btn btn-danger btn-sm" onclick="clearParticipants()">🗑 Clear All</button>
+      </div>
+      ${p.length === 0 ? `
+        <div class="empty"><div class="empty-icon">🕐</div><p>No students have joined yet. Share the code!</p></div>
+      ` : `
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Score</th>
+                <th>Accuracy</th>
+                <th>Time Taken</th>
+                <th>Joined At</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${p.map((px, idx) => {
+                const pct = px.status === 'done' ? Math.round((px.score/5)*100) : '—';
+                const scoreClass = px.score >= 4 ? 'score-high' : px.score >= 2 ? 'score-mid' : 'score-low';
+                const timeTaken = px.timeTaken ? formatSeconds(px.timeTaken) : '—';
+                return `
+                <tr>
+                  <td style="font-family:'DM Mono',monospace;color:var(--slate);">${idx+1}</td>
+                  <td><strong>${px.name}</strong></td>
+                  <td><span class="status-pill ${px.status === 'done' ? 'pill-done' : px.status === 'in-progress' ? 'pill-progress' : 'pill-waiting'}">${px.status === 'done' ? '✓ Done' : px.status === 'in-progress' ? '⏳ In Progress' : '⏸ Waiting'}</span></td>
+                  <td>${px.status === 'done' ? `<span class="score-badge ${scoreClass}">${px.score}/5</span>` : '—'}</td>
+                  <td style="font-family:'DM Mono',monospace;">${typeof pct === 'number' ? pct+'%' : pct}</td>
+                  <td style="font-family:'DM Mono',monospace;">${timeTaken}</td>
+                  <td style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--slate);">${formatTime(px.joinedAt)}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `}
+    </div>
+  `;
+}
+
+function clearParticipants() {
+  state.participants = [];
+  renderDashboard();
+  toast('Participant list cleared.');
+}
+
+function copyCode() {
+  if (state.sessionCode) {
+    navigator.clipboard.writeText(state.sessionCode).catch(() => {});
+    toast('Code copied: ' + state.sessionCode);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  STUDENT VIEW: JOIN
+// ═══════════════════════════════════════════════════════
+function joinQuiz() {
+  const code = document.getElementById('joinCode').value.trim().toUpperCase();
+  const name = document.getElementById('joinName').value.trim();
+
+  if (!code || code.length < 4) { toast('Enter a valid quiz code.'); return; }
+  if (!name) { toast('Please enter your name.'); return; }
+
+  if (!state.quiz || code !== state.sessionCode) {
+    toast('❌ Quiz code not found. Ask your teacher!'); return;
+  }
+
+  const participant = {
+    id: Date.now(),
+    name,
+    status: 'in-progress',
+    score: 0,
+    answers: [],
+    joinedAt: new Date(),
+    timeTaken: null,
+  };
+  state.participants.push(participant);
+
+  document.getElementById('joinEntry').style.display = 'none';
+  document.getElementById('quizRunner').style.display = 'block';
+  startQuizRunner(participant);
+}
+
+// ═══════════════════════════════════════════════════════
+//  STUDENT VIEW: QUIZ RUNNER
+// ═══════════════════════════════════════════════════════
+function startQuizRunner(participant) {
+  const runner = document.getElementById('quizRunner');
+  const q = state.quiz;
+  let current = 0;
+  const answers = [];
+  const startTime = Date.now();
+  let timerInterval = null;
+
+  function renderQuestion() {
+    const qi = current;
+    const question = q.questions[qi];
+    const pct = ((qi) / 5) * 100;
+
+    runner.innerHTML = `
+      <div class="quiz-container">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+          <div style="font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--slate);">
+            ${q.title}
+          </div>
+          ${q.timeLimit ? `<div style="font-family:'DM Mono',monospace;font-size:0.85rem;font-weight:500;" id="timerDisplay">⏱ ${q.timeLimit}:00</div>` : ''}
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" style="width:${pct}%"></div>
+        </div>
+        <div class="q-card">
+          <div class="q-num">Question ${qi + 1} of 5</div>
+          <div class="q-text">${question.text}</div>
+          <div class="q-options" id="optionsWrap">
+            ${LETTERS.map(l => `
+              <div class="q-option" data-letter="${l}" onclick="selectOption('${l}')">
+                <span class="q-opt-letter">${l}</span>
+                <span class="q-opt-text">${question.opts[l]}</span>
+              </div>
+            `).join('')}
+          </div>
+          <div class="btn-row" style="margin-top:1.5rem;justify-content:flex-end;">
+            <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()" disabled>
+              ${qi === 4 ? '✅ Submit Quiz' : 'Next →'}
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    if (q.timeLimit && qi === 0) startTimer();
+  }
+
+  let selectedAnswer = null;
+
+  window.selectOption = (letter) => {
+    selectedAnswer = letter;
+    document.querySelectorAll('.q-option').forEach(el => {
+      el.classList.toggle('selected', el.dataset.letter === letter);
+    });
+    document.getElementById('nextBtn').disabled = false;
+  };
+
+  window.nextQuestion = () => {
+    if (!selectedAnswer) return;
+    answers.push(selectedAnswer);
+    selectedAnswer = null;
+    current++;
+    if (current < 5) {
+      renderQuestion();
+    } else {
+      finishQuiz();
+    }
+  };
+
+  function startTimer() {
+    let remaining = q.timeLimit * 60;
+    timerInterval = setInterval(() => {
+      remaining--;
+      const m = Math.floor(remaining / 60);
+      const s = remaining % 60;
+      const el = document.getElementById('timerDisplay');
+      if (el) el.textContent = `⏱ ${m}:${String(s).padStart(2,'0')}`;
+      if (remaining <= 0) { clearInterval(timerInterval); finishQuiz(); }
+    }, 1000);
+  }
+
+  function finishQuiz() {
+    clearInterval(timerInterval);
+    // Fill missing answers
+    while (answers.length < 5) answers.push(null);
+    const timeTaken = Math.round((Date.now() - startTime) / 1000);
+    let score = 0;
+    q.questions.forEach((qq, i) => { if (answers[i] === qq.correct) score++; });
+
+    // Update participant
+    const idx = state.participants.findIndex(p => p.id === participant.id);
+    if (idx !== -1) {
+      state.participants[idx].status = 'done';
+      state.participants[idx].score = score;
+      state.participants[idx].answers = answers;
+      state.participants[idx].timeTaken = timeTaken;
+    }
+
+    // Show result
+    const pct = Math.round((score / 5) * 100);
+    const msg = score === 5 ? '🌟 Perfect Score!' : score >= 4 ? '🎉 Great Job!' : score >= 3 ? '👍 Good Effort!' : score >= 2 ? '📚 Keep Studying!' : '💪 Don\'t Give Up!';
+
+    runner.innerHTML = `
+      <div class="quiz-container">
+        <div class="result-hero">
+          <div class="result-score-ring">
+            <div class="result-score-num">${score}</div>
+            <div class="result-score-denom">out of 5</div>
+          </div>
+          <div class="result-title">${msg}</div>
+          <div class="result-pct">${pct}% correct · ${formatSeconds(timeTaken)}</div>
+        </div>
+
+        <!-- Answer Review -->
+        ${q.questions.map((qq, i) => {
+          const chosen = answers[i];
+          const isCorrect = chosen === qq.correct;
+          return `
+          <div class="card" style="margin-bottom:1rem;">
+            <div style="display:flex;gap:0.75rem;align-items:flex-start;margin-bottom:0.75rem;">
+              <span style="font-size:1.1rem;">${isCorrect ? '✅' : '❌'}</span>
+              <span style="font-size:0.92rem;font-weight:500;">${qq.text}</span>
+            </div>
+            ${LETTERS.map(l => {
+              let cls = '';
+              if (l === qq.correct) cls = 'correct';
+              else if (l === chosen && !isCorrect) cls = 'wrong';
+              return `
+              <div class="q-option ${cls}" style="cursor:default;margin-bottom:0.4rem;">
+                <span class="q-opt-letter">${l}</span>
+                <span class="q-opt-text">${qq.opts[l]}</span>
+                ${l === qq.correct ? '<span style="margin-left:auto;font-size:0.75rem;color:var(--green);font-family:\'DM Mono\',monospace;">CORRECT</span>' : ''}
+                ${l === chosen && !isCorrect ? '<span style="margin-left:auto;font-size:0.75rem;color:var(--red);font-family:\'DM Mono\',monospace;">YOUR ANSWER</span>' : ''}
+              </div>`;
+            }).join('')}
+          </div>`;
+        }).join('')}
+
+        <div class="btn-row" style="justify-content:center;">
+          <button class="btn btn-secondary" onclick="resetStudentView()">← Try Another Quiz</button>
+        </div>
+      </div>
+    `;
+  }
+
+  renderQuestion();
+}
+
+window.resetStudentView = () => {
+  document.getElementById('joinEntry').style.display = 'block';
+  document.getElementById('quizRunner').style.display = 'none';
+  document.getElementById('joinCode').value = '';
+  document.getElementById('joinName').value = '';
+};
+
+// ═══════════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════════
+function formatTime(date) {
+  if (!date) return '—';
+  const d = new Date(date);
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+function formatSeconds(s) {
+  if (!s) return '—';
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
+}
+function toast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ═══════════════════════════════════════════════════════
+//  DEMO DATA: pre-fill a sample quiz so the teacher can
+//  see how the dashboard looks right away
+// ═══════════════════════════════════════════════════════
+function loadDemo() {
+  document.getElementById('quizTitle').value = 'Cell Biology Basics';
+  document.getElementById('quizSubject').value = 'Biology 101';
+  document.getElementById('quizTime').value = '10';
+  document.getElementById('teacherName').value = 'Ms. Johnson';
+
+  const qs = [
+    { text: 'What is the powerhouse of the cell?', opts: {A:'Nucleus',B:'Mitochondria',C:'Ribosome',D:'Vacuole'}, correct:'B' },
+    { text: 'Which organelle contains DNA?', opts: {A:'Cell membrane',B:'Golgi apparatus',C:'Nucleus',D:'Lysosome'}, correct:'C' },
+    { text: 'What process do plants use to make food?', opts: {A:'Respiration',B:'Osmosis',C:'Fermentation',D:'Photosynthesis'}, correct:'D' },
+    { text: 'What is the basic unit of life?', opts: {A:'Atom',B:'Molecule',C:'Cell',D:'Tissue'}, correct:'C' },
+    { text: 'What surrounds all cells?', opts: {A:'Cell wall',B:'Cell membrane',C:'Cytoplasm',D:'Nucleus'}, correct:'B' },
+  ];
+  qs.forEach((q, i) => {
+    document.getElementById(`q${i+1}_text`).value = q.text;
+    LETTERS.forEach(l => document.getElementById(`q${i+1}_opt${l}`).value = q.opts[l]);
+    document.getElementById(`q${i+1}_correct`).value = q.correct;
+  });
+  toast('📚 Demo quiz loaded! Hit "Publish Quiz" to test.');
+}
+// Add demo button
+document.querySelector('.btn-row').insertAdjacentHTML('beforeend',
+  `<button class="btn btn-secondary" onclick="loadDemo()">📚 Load Demo</button>`
+);
+</script>
+</body>
+</html>
