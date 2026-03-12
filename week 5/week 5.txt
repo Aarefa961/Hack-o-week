@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WanderLog — Share Your Journey</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink: #1a1410;
+      --cream: #faf7f2;
+      --sand: #e8dfd0;
+      --terra: #b5622a;
+      --moss: #4a5e3a;
+      --sky: #6a9fb5;
+      --gold: #c9973a;
+      --muted: #7a6e62;
+      --card-bg: #ffffff;
+      --border: #ddd5c8;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    /* NAV */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(250,247,242,0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px;
+    }
+    .nav-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem; font-weight: 700;
+      color: var(--ink); text-decoration: none;
+      letter-spacing: -0.5px;
+    }
+    .nav-logo span { color: var(--terra); }
+    .nav-actions { display: flex; gap: 0.75rem; align-items: center; }
+    .btn {
+      padding: 0.5rem 1.25rem;
+      border-radius: 6px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.875rem; font-weight: 500;
+      cursor: pointer; transition: all 0.2s; border: none;
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid var(--border);
+      color: var(--ink);
+    }
+    .btn-outline:hover { border-color: var(--terra); color: var(--terra); }
+    .btn-primary {
+      background: var(--terra);
+      color: #fff;
+    }
+    .btn-primary:hover { background: #9e5023; }
+    .btn-ghost {
+      background: transparent; color: var(--muted);
+      border: 1.5px solid transparent; font-size: 0.8rem;
+    }
+    .btn-ghost:hover { color: var(--ink); }
+
+    /* HERO */
+    .hero {
+      padding: 5rem 2rem 4rem;
+      text-align: center;
+      max-width: 700px; margin: 0 auto;
+      animation: fadeUp 0.7s ease both;
+    }
+    .hero-tag {
+      display: inline-block;
+      background: var(--sand);
+      color: var(--terra);
+      font-size: 0.75rem; font-weight: 500;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 0.35rem 0.9rem; border-radius: 20px;
+      margin-bottom: 1.5rem;
+    }
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.2rem, 5vw, 3.5rem);
+      line-height: 1.15;
+      color: var(--ink);
+      margin-bottom: 1rem;
+    }
+    .hero h1 em { color: var(--terra); font-style: italic; }
+    .hero p {
+      font-size: 1.05rem; color: var(--muted);
+      line-height: 1.7; margin-bottom: 2rem;
+    }
+    .hero-cta { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+
+    /* DIVIDER */
+    .divider {
+      max-width: 1100px; margin: 0 auto;
+      border: none; border-top: 1px solid var(--border);
+    }
+
+    /* SECTION */
+    section { max-width: 1100px; margin: 0 auto; padding: 3rem 2rem; }
+    .section-header {
+      display: flex; align-items: baseline;
+      justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;
+    }
+    .section-header h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem; font-weight: 700;
+    }
+    .section-header a { color: var(--terra); font-size: 0.875rem; text-decoration: none; }
+    .section-header a:hover { text-decoration: underline; }
+
+    /* BLOG GRID */
+    .blog-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .blog-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+      animation: fadeUp 0.5s ease both;
+      cursor: pointer;
+    }
+    .blog-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(26,20,16,0.1); }
+
+    .card-img {
+      width: 100%; height: 200px;
+      object-fit: cover; display: block;
+      background: var(--sand);
+      position: relative; overflow: hidden;
+    }
+    .card-img-placeholder {
+      width: 100%; height: 200px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 3rem;
+    }
+    .card-body { padding: 1.25rem; }
+    .card-meta {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.75rem; color: var(--muted);
+      margin-bottom: 0.6rem; flex-wrap: wrap;
+    }
+    .card-tag {
+      background: var(--sand); color: var(--terra);
+      padding: 0.15rem 0.6rem; border-radius: 20px;
+      font-size: 0.7rem; font-weight: 500;
+    }
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem; font-weight: 700;
+      margin-bottom: 0.5rem; line-height: 1.35;
+    }
+    .card-excerpt { font-size: 0.875rem; color: var(--muted); line-height: 1.65; }
+    .card-footer {
+      padding: 0.9rem 1.25rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .author-row { display: flex; align-items: center; gap: 0.5rem; }
+    .avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--sand);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 600; color: var(--terra);
+      flex-shrink: 0;
+    }
+    .author-name { font-size: 0.8rem; font-weight: 500; }
+    .card-likes { font-size: 0.8rem; color: var(--muted); }
+
+    /* EMPTY STATE */
+    .empty-state {
+      text-align: center; padding: 4rem 2rem;
+      color: var(--muted); grid-column: 1/-1;
+    }
+    .empty-state .icon { font-size: 3rem; margin-bottom: 1rem; }
+    .empty-state h3 { font-family: 'Playfair Display', serif; margin-bottom: 0.5rem; color: var(--ink); }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(26,20,16,0.55);
+      backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 1rem;
+      opacity: 0; pointer-events: none; transition: opacity 0.25s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+    .modal {
+      background: var(--card-bg);
+      border-radius: 16px;
+      width: 100%; max-width: 620px;
+      max-height: 90vh; overflow-y: auto;
+      padding: 2rem;
+      transform: translateY(20px); transition: transform 0.25s;
+      position: relative;
+    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+
+    .modal-close {
+      position: absolute; top: 1rem; right: 1rem;
+      background: var(--sand); border: none;
+      width: 32px; height: 32px; border-radius: 50%;
+      cursor: pointer; font-size: 1rem; display: flex;
+      align-items: center; justify-content: center;
+      color: var(--muted); transition: background 0.2s;
+    }
+    .modal-close:hover { background: var(--border); }
+
+    .modal h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem; margin-bottom: 0.25rem;
+    }
+    .modal-sub { color: var(--muted); font-size: 0.875rem; margin-bottom: 1.75rem; }
+
+    .form-group { margin-bottom: 1.25rem; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    label {
+      display: block; font-size: 0.8rem; font-weight: 500;
+      color: var(--muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    input, textarea, select {
+      width: 100%; padding: 0.65rem 0.9rem;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+      color: var(--ink); background: var(--cream);
+      transition: border-color 0.2s; outline: none;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--terra); background: #fff; }
+    textarea { resize: vertical; min-height: 120px; }
+    .char-count { font-size: 0.75rem; color: var(--muted); text-align: right; margin-top: 0.25rem; }
+
+    .trip-slots { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .trip-slot {
+      border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 1rem;
+      background: var(--cream);
+    }
+    .trip-slot-header {
+      display: flex; align-items: center; gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .trip-num {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--terra); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 600; flex-shrink: 0;
+    }
+    .trip-slot-title { font-weight: 500; font-size: 0.9rem; }
+
+    .emoji-picker { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+    .emoji-opt {
+      width: 36px; height: 36px;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      background: var(--cream); cursor: pointer;
+      font-size: 1.1rem; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .emoji-opt:hover, .emoji-opt.selected { border-color: var(--terra); background: #fff5ee; }
+
+    .modal-footer {
+      display: flex; gap: 0.75rem; justify-content: flex-end;
+      margin-top: 1.5rem; padding-top: 1.25rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* VIEW MODAL */
+    .view-modal {
+      max-width: 700px;
+    }
+    .view-hero {
+      font-size: 5rem; text-align: center;
+      padding: 1.5rem; background: var(--sand);
+      border-radius: 10px; margin-bottom: 1.5rem;
+    }
+    .view-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem; margin-bottom: 0.5rem;
+    }
+    .view-meta { color: var(--muted); font-size: 0.875rem; margin-bottom: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+    .view-body { font-size: 0.95rem; line-height: 1.75; color: #3a3228; margin-bottom: 1.5rem; }
+    .view-trips { display: flex; flex-direction: column; gap: 1rem; }
+    .view-trip {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1.1rem;
+      background: var(--cream);
+    }
+    .view-trip-head {
+      display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;
+    }
+    .view-trip-emoji { font-size: 1.5rem; }
+    .view-trip-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem; font-weight: 700;
+    }
+    .view-trip-loc { font-size: 0.8rem; color: var(--muted); }
+    .view-trip-story { font-size: 0.875rem; color: #3a3228; line-height: 1.7; }
+
+    .like-btn {
+      background: none; border: 1.5px solid var(--border);
+      border-radius: 20px; padding: 0.35rem 0.9rem;
+      cursor: pointer; font-size: 0.875rem; color: var(--muted);
+      transition: all 0.2s; display: flex; align-items: center; gap: 0.35rem;
+    }
+    .like-btn:hover, .like-btn.liked { border-color: #e05252; color: #e05252; }
+
+    /* TOAST */
+    .toast {
+      position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(80px);
+      background: var(--ink); color: #fff;
+      padding: 0.75rem 1.5rem; border-radius: 8px;
+      font-size: 0.875rem; font-weight: 500;
+      transition: transform 0.3s ease; z-index: 300;
+      white-space: nowrap;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem; text-align: center;
+      color: var(--muted); font-size: 0.8rem;
+    }
+    footer a { color: var(--terra); text-decoration: none; }
+
+    /* ANIMATIONS */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .blog-card:nth-child(1) { animation-delay: 0.05s; }
+    .blog-card:nth-child(2) { animation-delay: 0.1s; }
+    .blog-card:nth-child(3) { animation-delay: 0.15s; }
+    .blog-card:nth-child(4) { animation-delay: 0.2s; }
+    .blog-card:nth-child(5) { animation-delay: 0.25s; }
+
+    /* FILTER BAR */
+    .filter-bar {
+      display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 2rem;
+    }
+    .filter-chip {
+      padding: 0.4rem 1rem; border-radius: 20px;
+      border: 1.5px solid var(--border);
+      background: transparent; cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8rem; color: var(--muted);
+      transition: all 0.2s;
+    }
+    .filter-chip:hover { border-color: var(--terra); color: var(--terra); }
+    .filter-chip.active { background: var(--terra); border-color: var(--terra); color: #fff; }
+
+    /* STATS BAR */
+    .stats-bar {
+      background: var(--ink); color: #fff;
+      display: flex; justify-content: center; gap: 3rem;
+      padding: 1.5rem 2rem; flex-wrap: wrap;
+    }
+    .stat { text-align: center; }
+    .stat-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.75rem; font-weight: 700;
+      color: var(--gold);
+    }
+    .stat-label { font-size: 0.75rem; color: #a09080; text-transform: uppercase; letter-spacing: 0.08em; }
+
+    @media (max-width: 600px) {
+      .form-row { grid-template-columns: 1fr; }
+      nav { padding: 0 1rem; }
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      section { padding: 2rem 1rem; }
+      .stats-bar { gap: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">Wander<span>Log</span></a>
+  <div class="nav-actions">
+    <button class="btn btn-outline" onclick="openModal('write')">✏️ Write</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <span class="hero-tag">✈️ Traveller Stories</span>
+  <h1>Every journey deserves<br><em>to be told.</em></h1>
+  <p>Share your travel adventures with the world. Write about the places you've been, the moments that moved you, and the stories only you can tell.</p>
+  <div class="hero-cta">
+    <button class="btn btn-primary" onclick="openModal('write')">Start your blog</button>
+    <button class="btn btn-outline" onclick="document.getElementById('posts').scrollIntoView({behavior:'smooth'})">Browse stories</button>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-bar" id="statsBar">
+  <div class="stat"><div class="stat-num" id="stat-blogs">0</div><div class="stat-label">Blogs Published</div></div>
+  <div class="stat"><div class="stat-num" id="stat-trips">0</div><div class="stat-label">Trips Shared</div></div>
+  <div class="stat"><div class="stat-num" id="stat-likes">0</div><div class="stat-label">Hearts Given</div></div>
+</div>
+
+<!-- POSTS SECTION -->
+<section id="posts">
+  <div class="section-header">
+    <h2>Recent Stories</h2>
+    <a href="#" onclick="openModal('write'); return false;">+ Share yours</a>
+  </div>
+  <div class="filter-bar" id="filterBar">
+    <button class="filter-chip active" data-tag="all">All</button>
+    <button class="filter-chip" data-tag="Adventure">🏔 Adventure</button>
+    <button class="filter-chip" data-tag="Beach">🏖 Beach</button>
+    <button class="filter-chip" data-tag="City">🏙 City</button>
+    <button class="filter-chip" data-tag="Culture">🏛 Culture</button>
+    <button class="filter-chip" data-tag="Food">🍜 Food</button>
+    <button class="filter-chip" data-tag="Nature">🌿 Nature</button>
+  </div>
+  <div class="blog-grid" id="blogGrid"></div>
+</section>
+
+<hr class="divider"/>
+
+<footer>
+  <p>Built with ❤️ for travellers · <a href="#">WanderLog</a> · Share your world, one story at a time.</p>
+</footer>
+
+<!-- WRITE MODAL -->
+<div class="modal-overlay" id="writeModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('write')">✕</button>
+    <h2>Share Your Journey</h2>
+    <p class="modal-sub">Tell the world about 3 trips that shaped you.</p>
+
+    <div class="form-group form-row">
+      <div>
+        <label>Your Name</label>
+        <input type="text" id="authorName" placeholder="e.g. Priya Sharma" maxlength="40"/>
+      </div>
+      <div>
+        <label>Blog Tag</label>
+        <select id="blogTag">
+          <option value="Adventure">🏔 Adventure</option>
+          <option value="Beach">🏖 Beach</option>
+          <option value="City">🏙 City</option>
+          <option value="Culture">🏛 Culture</option>
+          <option value="Food">🍜 Food</option>
+          <option value="Nature">🌿 Nature</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Blog Title</label>
+      <input type="text" id="blogTitle" placeholder="e.g. Three Trips That Changed Me" maxlength="80"/>
+    </div>
+
+    <div class="form-group">
+      <label>Introduction <span style="font-weight:300">(optional)</span></label>
+      <textarea id="blogIntro" placeholder="A short intro to your travel story..." maxlength="400" oninput="updateCount(this,'introCount',400)"></textarea>
+      <div class="char-count"><span id="introCount">0</span>/400</div>
+    </div>
+
+    <div style="font-size:0.8rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);margin-bottom:0.75rem;">Your 3 Trips</div>
+    <div class="trip-slots" id="tripSlots"></div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('write')">Cancel</button>
+      <button class="btn btn-primary" onclick="publishBlog()">Publish Story ✈️</button>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW MODAL -->
+<div class="modal-overlay" id="viewModal">
+  <div class="modal view-modal" id="viewModalContent">
+    <button class="modal-close" onclick="closeModal('view')">✕</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  const EMOJIS = ['🌏','🏔','🏖','🏙','🌿','🍜','🏛','🚂','🛶','🗺','🌋','🏜'];
+  const TRIP_THEMES = ['First Trip', 'Second Trip', 'Third Trip'];
+
+  let blogs = JSON.parse(localStorage.getItem('wanderlogs') || '[]');
+  let activeFilter = 'all';
+
+  // Seed sample data if empty
+  if (!blogs.length) {
+    blogs = [
+      {
+        id: 1, author: 'Aisha Novak', tag: 'Culture', emoji: '🌏',
+        title: 'Chasing Sunsets Across Three Continents',
+        intro: 'I never expected three weeks of travel to completely rewire how I see beauty, time, and myself.',
+        trips: [
+          { name: 'Marrakech, Morocco', location: 'Africa', emoji: '🏛', story: 'The medina swallowed me whole. Narrow streets, the smell of cumin and rose water, merchants calling from doorways. I got genuinely lost for three hours and it was the best afternoon of my life.' },
+          { name: 'Kyoto in Autumn', location: 'Japan', emoji: '🌿', story: 'Maple leaves painted every temple path in amber and crimson. I sat beside a koi pond at Kinkaku-ji and forgot, briefly, that time existed at all.' },
+          { name: 'Patagonia Trek', location: 'Chile', emoji: '🏔', story: "Six days in Torres del Paine. Wind that could knock you sideways, glaciers the color of milk glass, and a silence so complete it felt sacred." }
+        ],
+        likes: 42, likedBy: [], date: '2025-11-12'
+      },
+      {
+        id: 2, author: 'Rohan Mehta', tag: 'Food', emoji: '🍜',
+        title: 'Eating My Way Around Southeast Asia',
+        intro: 'I planned to explore temples. What I actually explored was every street food stall from Bangkok to Hanoi.',
+        trips: [
+          { name: 'Bangkok Street Food Tour', location: 'Thailand', emoji: '🍜', story: 'Pad see ew at midnight in a plastic chair on the sidewalk. A fan blowing warm air. The best noodles of my life, cost about 40 baht.' },
+          { name: 'Hội An, Vietnam', location: 'Vietnam', emoji: '🌏', story: 'White rose dumplings. Cao lầu noodles. Bánh mì with pâté and jalapeños. Every meal felt like it had been perfected over centuries — because it had.' },
+          { name: 'Penang Heritage Eats', location: 'Malaysia', emoji: '🏙', story: 'Char kway teow, wonton mee, the creamiest curry laksa I have ever encountered. Penang ruined all other food cities for me forever.' }
+        ],
+        likes: 31, likedBy: [], date: '2025-12-03'
+      }
+    ];
+    save();
+  }
+
+  function save() {
+    localStorage.setItem('wanderlogs', JSON.stringify(blogs));
+    updateStats();
+  }
+
+  function updateStats() {
+    document.getElementById('stat-blogs').textContent = blogs.length;
+    document.getElementById('stat-trips').textContent = blogs.reduce((a,b) => a + b.trips.filter(t=>t.name).length, 0);
+    document.getElementById('stat-likes').textContent = blogs.reduce((a,b) => a + b.likes, 0);
+  }
+
+  function renderGrid() {
+    const grid = document.getElementById('blogGrid');
+    const filtered = activeFilter === 'all' ? blogs : blogs.filter(b => b.tag === activeFilter);
+    if (!filtered.length) {
+      grid.innerHTML = `<div class="empty-state"><div class="icon">✈️</div><h3>No stories yet</h3><p>Be the first to share a travel story!</p></div>`;
+      return;
+    }
+    grid.innerHTML = filtered.map(b => `
+      <div class="blog-card" onclick="viewBlog(${b.id})">
+        <div class="card-img-placeholder" style="background:${tagColor(b.tag)}">${b.emoji}</div>
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="card-tag">${b.tag}</span>
+            <span>${formatDate(b.date)}</span>
+            <span>· ${b.trips.filter(t=>t.name).length} trips</span>
+          </div>
+          <div class="card-title">${escHtml(b.title)}</div>
+          <div class="card-excerpt">${escHtml(b.intro || b.trips[0]?.story || '').slice(0,120)}${(b.intro||'').length > 120 ? '…' : ''}</div>
+        </div>
+        <div class="card-footer">
+          <div class="author-row">
+            <div class="avatar">${b.author.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}</div>
+            <span class="author-name">${escHtml(b.author)}</span>
+          </div>
+          <span class="card-likes">♥ ${b.likes}</span>
+        </div>
+      </div>
+    `).join('');
+    updateStats();
+  }
+
+  function tagColor(tag) {
+    return {Adventure:'#dde8e0',Beach:'#d9eaf5',City:'#e8e0d5',Culture:'#f0dfd0',Food:'#faebd7',Nature:'#dde8d8'}[tag] || '#e8dfd0';
+  }
+
+  function formatDate(d) {
+    if (!d) return '';
+    const dt = new Date(d);
+    return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  }
+
+  function escHtml(s) {
+    if(!s) return '';
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // WRITE MODAL
+  function buildTripSlots() {
+    const el = document.getElementById('tripSlots');
+    el.innerHTML = TRIP_THEMES.map((t,i) => `
+      <div class="trip-slot">
+        <div class="trip-slot-header">
+          <div class="trip-num">${i+1}</div>
+          <span class="trip-slot-title">${t}</span>
+        </div>
+        <div class="form-row" style="margin-bottom:0.75rem">
+          <div>
+            <label>Place / Trip Name</label>
+            <input type="text" id="trip${i}name" placeholder="e.g. Kyoto, Japan" maxlength="60"/>
+          </div>
+          <div>
+            <label>Country / Region</label>
+            <input type="text" id="trip${i}loc" placeholder="e.g. Japan" maxlength="40"/>
+          </div>
+        </div>
+        <div>
+          <label>Your Story</label>
+          <textarea id="trip${i}story" placeholder="What happened? What did you feel?" maxlength="600" rows="3" oninput="updateCount(this,'tripCount${i}',600)"></textarea>
+          <div class="char-count"><span id="tripCount${i}">0</span>/600</div>
+        </div>
+        <div>
+          <label>Vibe Emoji</label>
+          <div class="emoji-picker" id="emojiPicker${i}">
+            ${EMOJIS.map(e=>`<button type="button" class="emoji-opt${i===0&&e==='🌏'?' selected':''}" data-i="${i}" data-e="${e}" onclick="selectEmoji(${i},'${e}')">${e}</button>`).join('')}
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function selectEmoji(i, e) {
+    document.querySelectorAll(`#emojiPicker${i} .emoji-opt`).forEach(el=>el.classList.remove('selected'));
+    document.querySelector(`#emojiPicker${i} [data-e="${e}"]`).classList.add('selected');
+  }
+
+  function getSelectedEmoji(i) {
+    const s = document.querySelector(`#emojiPicker${i} .emoji-opt.selected`);
+    return s ? s.getAttribute('data-e') : EMOJIS[i % EMOJIS.length];
+  }
+
+  function updateCount(el, countId, max) {
+    document.getElementById(countId).textContent = el.value.length;
+  }
+
+  function openModal(type) {
+    if (type === 'write') {
+      buildTripSlots();
+      document.getElementById('authorName').value = '';
+      document.getElementById('blogTitle').value = '';
+      document.getElementById('blogIntro').value = '';
+      document.getElementById('introCount').textContent = '0';
+      document.getElementById('writeModal').classList.add('open');
+    } else if (type === 'view') {
+      document.getElementById('viewModal').classList.add('open');
+    }
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal(type) {
+    document.getElementById(type+'Modal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  document.getElementById('writeModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal('write');
+  });
+  document.getElementById('viewModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal('view');
+  });
+
+  function publishBlog() {
+    const author = document.getElementById('authorName').value.trim();
+    const title = document.getElementById('blogTitle').value.trim();
+    const intro = document.getElementById('blogIntro').value.trim();
+    const tag = document.getElementById('blogTag').value;
+
+    if (!author) { showToast('Please enter your name ✍️'); return; }
+    if (!title) { showToast('Please add a blog title 📝'); return; }
+
+    const trips = [0,1,2].map(i => ({
+      name: document.getElementById(`trip${i}name`).value.trim(),
+      location: document.getElementById(`trip${i}loc`).value.trim(),
+      story: document.getElementById(`trip${i}story`).value.trim(),
+      emoji: getSelectedEmoji(i)
+    }));
+
+    const filledTrips = trips.filter(t => t.name && t.story);
+    if (filledTrips.length < 1) {
+      showToast('Add at least 1 trip story 🗺');
+      return;
+    }
+
+    const blog = {
+      id: Date.now(),
+      author, title, intro, tag,
+      emoji: filledTrips[0].emoji,
+      trips: filledTrips,
+      likes: 0, likedBy: [],
+      date: new Date().toISOString().split('T')[0]
+    };
+
+    blogs.unshift(blog);
+    save();
+    renderGrid();
+    closeModal('write');
+    showToast('Your story is live! ✈️');
+  }
+
+  function viewBlog(id) {
+    const b = blogs.find(x => x.id === id);
+    if (!b) return;
+    const sessionId = 'sess_' + Math.random().toString(36).slice(2);
+    const liked = b.likedBy && b.likedBy.includes(sessionId);
+
+    const content = document.getElementById('viewModalContent');
+    content.innerHTML = `
+      <button class="modal-close" onclick="closeModal('view')">✕</button>
+      <div class="view-hero">${b.emoji}</div>
+      <div class="card-tag" style="margin-bottom:0.75rem">${b.tag}</div>
+      <div class="view-title">${escHtml(b.title)}</div>
+      <div class="view-meta">
+        <span>By <strong>${escHtml(b.author)}</strong></span>
+        <span>${formatDate(b.date)}</span>
+        <span>${b.trips.length} trip${b.trips.length>1?'s':''}</span>
+      </div>
+      ${b.intro ? `<div class="view-body">${escHtml(b.intro)}</div>` : ''}
+      <div class="view-trips">
+        ${b.trips.map((t,i) => `
+          <div class="view-trip">
+            <div class="view-trip-head">
+              <span class="view-trip-emoji">${t.emoji}</span>
+              <div>
+                <div class="view-trip-name">${escHtml(t.name)}</div>
+                ${t.location ? `<div class="view-trip-loc">📍 ${escHtml(t.location)}</div>` : ''}
+              </div>
+              <span style="margin-left:auto;font-size:0.75rem;color:var(--muted)">Trip ${i+1}</span>
+            </div>
+            <div class="view-trip-story">${escHtml(t.story)}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div style="display:flex;align-items:center;gap:1rem;margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border)">
+        <button class="like-btn" id="likeBtn_${b.id}" onclick="likeBlog(${b.id})">
+          ♥ <span id="likeCount_${b.id}">${b.likes}</span>
+        </button>
+        <span style="font-size:0.8rem;color:var(--muted)">Did this story inspire you?</span>
+      </div>
+    `;
+    openModal('view');
+  }
+
+  function likeBlog(id) {
+    const b = blogs.find(x => x.id === id);
+    if (!b) return;
+    b.likes++;
+    save();
+    const btn = document.getElementById(`likeBtn_${id}`);
+    const count = document.getElementById(`likeCount_${id}`);
+    if (btn) btn.classList.add('liked');
+    if (count) count.textContent = b.likes;
+    renderGrid();
+    showToast('♥ Thanks for the love!');
+  }
+
+  // FILTER
+  document.getElementById('filterBar').addEventListener('click', function(e) {
+    const chip = e.target.closest('.filter-chip');
+    if (!chip) return;
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    activeFilter = chip.dataset.tag;
+    renderGrid();
+  });
+
+  // TOAST
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  // INIT
+  renderGrid();
+</script>
+</body>
+</html>
