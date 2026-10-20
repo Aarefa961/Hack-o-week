@@ -1,0 +1,632 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Node Playground</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Familjen+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+  /* Layout: a header, a tab bar, and one two-column workbench per tab (controls left, live output right). */
+  :root {
+    --bg: #f3f5f1;
+    --surface: #ffffff;
+    --ink: #17201a;
+    --muted: #5d6a61;
+    --line: #d9dfd8;
+    --accent: #2c7a47;
+    --accent-ink: #ffffff;
+    --signal: #b25e09;
+    --ok: #2c7a47;
+    --bad: #b3261e;
+    --code: #eef1ec;
+    --font: "Familjen Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1511; --surface: #172019; --ink: #e5ece6; --muted: #92a196; --line: #2b362e;
+      --accent: #5dc28a; --accent-ink: #0b1a11; --signal: #f0a14a; --ok: #5dc28a; --bad: #ff8a80; --code: #1f2a22;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1511; --surface: #172019; --ink: #e5ece6; --muted: #92a196; --line: #2b362e;
+    --accent: #5dc28a; --accent-ink: #0b1a11; --signal: #f0a14a; --ok: #5dc28a; --bad: #ff8a80; --code: #1f2a22;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.5;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 20px 56px;
+  }
+  .page { width: min(1040px, 100%); margin: 0 auto; }
+  h1 { margin: 0; font-family: var(--mono); font-size: 1.7rem; letter-spacing: -0.03em; }
+  h1 span { color: var(--accent); }
+  .lead { margin: 6px 0 0; color: var(--muted); max-width: 62ch; }
+  .notice {
+    margin: 16px 0 0; padding: 10px 14px; border: 1px solid var(--line); border-left: 4px solid var(--signal);
+    background: var(--surface); border-radius: 6px; font-size: 0.9rem; color: var(--muted);
+  }
+  .notice b { color: var(--ink); }
+
+  .tabs { display: flex; gap: 4px; margin-top: 22px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+  .tabs button {
+    flex: none; padding: 10px 16px; border: 0; border-bottom: 3px solid transparent; background: none;
+    color: var(--muted); font: 600 0.95rem var(--font); cursor: pointer;
+  }
+  .tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+  .tabs button:hover { color: var(--ink); }
+
+  .bench { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; margin-top: 18px; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; min-width: 0; }
+  .panel + .panel { margin-top: 16px; }
+  .col { min-width: 0; }
+  .panel h2 { margin: 0 0 4px; font-size: 1.02rem; }
+  .panel p.sub { margin: 0 0 12px; color: var(--muted); font-size: 0.88rem; }
+  .label { display: block; margin: 10px 0 4px; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+
+  input, select, textarea {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink);
+    font: 0.88rem var(--mono);
+  }
+  textarea { resize: vertical; min-height: 64px; }
+  input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .row > * { min-width: 0; }
+  .row .grow { flex: 1 1 140px; }
+
+  button.btn {
+    padding: 8px 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink);
+    font: 600 0.85rem var(--font); cursor: pointer;
+  }
+  button.btn:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  button.chip { padding: 4px 10px; font: 0.76rem var(--mono); border-radius: 999px; }
+
+  pre, .out {
+    margin: 0; padding: 12px; background: var(--code); border-radius: 6px; font: 0.82rem/1.55 var(--mono);
+    overflow-x: auto; white-space: pre; color: var(--ink);
+  }
+  pre.wrap { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; font: 0.82rem var(--mono); margin: 0; }
+  .kv dt { color: var(--muted); }
+  .kv dd { margin: 0; overflow-wrap: anywhere; }
+  .ok { color: var(--ok); } .bad { color: var(--bad); } .sig { color: var(--signal); } .mute { color: var(--muted); }
+
+  .files { list-style: none; margin: 8px 0 0; padding: 0; font: 0.82rem var(--mono); }
+  .files li { padding: 3px 0; border-bottom: 1px dashed var(--line); display: flex; justify-content: space-between; gap: 10px; }
+
+  .checks { display: grid; gap: 6px; margin-top: 6px; }
+  .check { display: flex; gap: 8px; align-items: center; font: 0.85rem var(--mono); }
+  .check input { width: auto; }
+
+  .chain { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .chain li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; font: 0.82rem var(--mono); }
+  .chain .dot { width: 12px; height: 12px; border-radius: 50%; margin-top: 4px; background: var(--line); }
+  .chain li.ran .dot { background: var(--accent); }
+  .chain li.resp { border-color: var(--accent); }
+  .chain li.resp .dot { background: var(--signal); }
+  .chain li.err .dot { background: var(--bad); }
+  .chain li.skip { opacity: 0.55; }
+  .chain small { display: block; color: var(--muted); font: 0.78rem var(--font); }
+
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .status { font: 700 0.95rem var(--mono); margin-bottom: 8px; }
+
+  @media (max-width: 760px) { .bench { grid-template-columns: minmax(0, 1fr); } }
+  @media (prefers-reduced-motion: no-preference) { .tabs button { transition: color 0.15s; } }
+</style>
+
+<div class="page">
+  <h1>node<span>/</span>playground</h1>
+  <p class="lead">Four small workbenches for the four ideas: the Node runtime and modules, an npm project, a raw http server, and Express. Change an input, press a button, and watch what happens.</p>
+  <p class="notice"><b>This page simulates Node inside your browser.</b> Nothing here runs a real server. The real, runnable version is the <b>node-notes</b> project from earlier in this chat: unzip it, run <code>npm install</code> and <code>npm start</code>.</p>
+
+  <div class="tabs" role="tablist" id="tabs">
+    <button role="tab" aria-selected="true" data-tab="runtime">1 Runtime and modules</button>
+    <button role="tab" aria-selected="false" data-tab="npm">2 npm project</button>
+    <button role="tab" aria-selected="false" data-tab="raw">3 Raw http server</button>
+    <button role="tab" aria-selected="false" data-tab="express">4 Express</button>
+  </div>
+
+  <!-- ============ TAB 1 ============ -->
+  <section data-panel="runtime" class="bench">
+    <div class="col">
+      <div class="panel">
+        <h2>path module</h2>
+        <p class="sub">Build and pick apart file paths the same way on every operating system.</p>
+        <label class="label" for="p-segs">Segments (comma separated)</label>
+        <input id="p-segs" value="data, notes, ../logs/app.log" autocomplete="off">
+        <label class="label" for="p-cwd">process.cwd()</label>
+        <input id="p-cwd" value="/home/app" autocomplete="off">
+      </div>
+      <div class="panel">
+        <h2>fs module</h2>
+        <p class="sub">A tiny in-memory disk. Each button is the matching fs call.</p>
+        <label class="label" for="f-name">File name</label>
+        <input id="f-name" value="notes/todo.txt" autocomplete="off">
+        <label class="label" for="f-body">Contents</label>
+        <textarea id="f-body">learn Express</textarea>
+        <div class="toolbar">
+          <button class="btn primary" data-fs="write">writeFileSync</button>
+          <button class="btn" data-fs="read">readFileSync</button>
+          <button class="btn" data-fs="exists">existsSync</button>
+          <button class="btn" data-fs="list">readdirSync</button>
+          <button class="btn" data-fs="unlink">unlinkSync</button>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="panel">
+        <h2>path results</h2>
+        <dl class="kv" id="p-out"></dl>
+      </div>
+      <div class="panel">
+        <h2>fs output</h2>
+        <pre class="wrap" id="f-out">Press a button.</pre>
+        <ul class="files" id="f-list"></ul>
+      </div>
+      <div class="panel">
+        <h2>process object</h2>
+        <label class="label" for="pr-port">Environment variable PORT</label>
+        <input id="pr-port" value="3000" autocomplete="off">
+        <dl class="kv" id="pr-out" style="margin-top:12px"></dl>
+      </div>
+      <div class="panel">
+        <h2>CommonJS: module.exports and require()</h2>
+        <pre>// math.js
+function add(a, b) { return a + b; }
+module.exports = { add };
+
+// app.js
+const { add } = require("./math");</pre>
+        <div class="row" style="margin-top:10px">
+          <input id="m-a" type="number" value="2" aria-label="a" style="width:80px">
+          <input id="m-b" type="number" value="3" aria-label="b" style="width:80px">
+          <span class="mute">add(a, b) =</span> <b id="m-out" class="ok"></b>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TAB 2 ============ -->
+  <section data-panel="npm" class="bench" hidden>
+    <div class="col">
+      <div class="panel">
+        <h2>Create a Node project from scratch</h2>
+        <p class="sub">Pick a name and some packages. The commands and package.json update as you go.</p>
+        <label class="label" for="n-name">Project name</label>
+        <input id="n-name" value="my-first-api" autocomplete="off">
+        <span class="label">Dependencies (npm install)</span>
+        <div class="checks" id="n-deps"></div>
+        <span class="label">Dev dependencies (npm install -D)</span>
+        <div class="checks" id="n-dev"></div>
+        <label class="label" for="n-entry">Entry file</label>
+        <input id="n-entry" value="server.js" autocomplete="off">
+      </div>
+    </div>
+    <div class="col">
+      <div class="panel">
+        <h2>Commands to run</h2>
+        <pre id="n-cmds"></pre>
+        <div class="toolbar"><button class="btn" id="n-copy1">Copy commands</button></div>
+      </div>
+      <div class="panel">
+        <h2>Resulting package.json</h2>
+        <pre id="n-json"></pre>
+        <div class="toolbar"><button class="btn" id="n-copy2">Copy package.json</button></div>
+        <p class="sub" style="margin-top:10px">npm also creates <code>node_modules/</code> and <code>package-lock.json</code>. Add <code>node_modules/</code> to .gitignore.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TAB 3 ============ -->
+  <section data-panel="raw" class="bench" hidden>
+    <div class="col">
+      <div class="panel">
+        <h2>The server code</h2>
+        <p class="sub">Node's built-in <code>http</code> module. You write the routing yourself.</p>
+<pre>const http = require("http");
+
+http.createServer((req, res) => {
+  const url = new URL(req.url, "http://localhost");
+
+  if (req.method === "GET" &amp;&amp; url.pathname === "/time") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    return res.end(JSON.stringify({ now: new Date() }));
+  }
+  if (req.method === "GET" &amp;&amp; url.pathname === "/greet") {
+    const name = url.searchParams.get("name") || "stranger";
+    // ...respond with { message: `Hello, ${name}!` }
+  }
+  if (req.method === "POST" &amp;&amp; url.pathname === "/echo") {
+    let body = "";
+    req.on("data", (chunk) => (body += chunk));
+    req.on("end", () => { /* respond with body */ });
+    return;
+  }
+  res.writeHead(404);
+  res.end("Not found");
+}).listen(3001);</pre>
+      </div>
+    </div>
+    <div class="col">
+      <div class="panel">
+        <h2>Send a request</h2>
+        <div class="row">
+          <select id="r-method" aria-label="Method" style="width:96px"><option>GET</option><option>POST</option></select>
+          <input id="r-path" class="grow" value="/greet?name=Asha" aria-label="Path" autocomplete="off">
+        </div>
+        <label class="label" for="r-body">Body (POST only)</label>
+        <textarea id="r-body">hello from the client</textarea>
+        <div class="toolbar">
+          <button class="btn primary" id="r-send">Send request</button>
+          <button class="btn chip" data-raw="GET|/time|">GET /time</button>
+          <button class="btn chip" data-raw="GET|/greet?name=Asha|">GET /greet</button>
+          <button class="btn chip" data-raw="POST|/echo|hello from the client">POST /echo</button>
+          <button class="btn chip" data-raw="GET|/missing|">GET /missing</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>What the server did</h2>
+        <pre class="wrap" id="r-trace">Send a request.</pre>
+      </div>
+      <div class="panel">
+        <h2>Response</h2>
+        <div class="status" id="r-status"></div>
+        <pre class="wrap" id="r-resp"></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TAB 4 ============ -->
+  <section data-panel="express" class="bench" hidden>
+    <div class="col">
+      <div class="panel">
+        <h2>Middleware chain</h2>
+        <p class="sub">A request passes through these in order. Switch one off and see what breaks.</p>
+        <div class="checks" id="x-toggles"></div>
+      </div>
+      <div class="panel">
+        <h2>Send a request</h2>
+        <div class="row">
+          <select id="x-method" aria-label="Method" style="width:104px"><option>GET</option><option>POST</option><option>DELETE</option></select>
+          <input id="x-path" class="grow" value="/api/notes" aria-label="Path" autocomplete="off">
+        </div>
+        <label class="label" for="x-body">JSON body</label>
+        <textarea id="x-body">{"text": "Read the Express docs"}</textarea>
+        <div class="toolbar">
+          <button class="btn primary" id="x-send">Send request</button>
+        </div>
+        <span class="label">Try these</span>
+        <div class="toolbar" style="margin-top:0">
+          <button class="btn chip" data-x='GET|/api/notes|'>GET notes</button>
+          <button class="btn chip" data-x='POST|/api/notes|{"text": "Read the Express docs"}'>POST note</button>
+          <button class="btn chip" data-x='POST|/api/notes|{bad json'>bad JSON</button>
+          <button class="btn chip" data-x='POST|/api/notes|{"text": ""}'>empty text</button>
+          <button class="btn chip" data-x='GET|/api/hello/Asha?shout=true|'>route params</button>
+          <button class="btn chip" data-x='DELETE|/api/notes/seed-1|'>DELETE</button>
+          <button class="btn chip" data-x='GET|/|'>GET /</button>
+          <button class="btn chip" data-x='GET|/nope|'>GET /nope</button>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="panel">
+        <h2>Request path through the chain</h2>
+        <ol class="chain" id="x-chain"></ol>
+      </div>
+      <div class="panel">
+        <h2>Response</h2>
+        <div class="status" id="x-status"></div>
+        <pre class="wrap" id="x-resp"></pre>
+      </div>
+      <div class="panel">
+        <h2>Server console</h2>
+        <pre class="wrap" id="x-log">(empty)</pre>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
+  function kv(dl, rows) {
+    dl.replaceChildren();
+    rows.forEach(function (r) {
+      var dt = el("dt", "", r[0]); var dd = el("dd", r[2] || "", r[1]);
+      dl.append(dt, dd);
+    });
+  }
+  function copy(text, btn) {
+    var done = function () { var t = btn.textContent; btn.textContent = "Copied"; setTimeout(function () { btn.textContent = t; }, 1200); };
+    try { navigator.clipboard.writeText(text).then(done, function () {}); } catch (e) {}
+  }
+
+  /* ---------- Tabs ---------- */
+  var tabButtons = Array.prototype.slice.call(document.querySelectorAll("#tabs button"));
+  tabButtons.forEach(function (b) {
+    b.addEventListener("click", function () {
+      tabButtons.forEach(function (x) { x.setAttribute("aria-selected", String(x === b)); });
+      document.querySelectorAll("[data-panel]").forEach(function (p) { p.hidden = p.getAttribute("data-panel") !== b.getAttribute("data-tab"); });
+    });
+  });
+
+  /* ================= TAB 1 ================= */
+  var path = {
+    normalize: function (p) {
+      var abs = p.charAt(0) === "/"; var out = [];
+      p.split("/").forEach(function (part) {
+        if (!part || part === ".") return;
+        if (part === "..") { if (out.length && out[out.length - 1] !== "..") out.pop(); else if (!abs) out.push(".."); }
+        else out.push(part);
+      });
+      var r = (abs ? "/" : "") + out.join("/");
+      return r || (abs ? "/" : ".");
+    },
+    join: function (segs) { var s = segs.filter(Boolean).join("/"); return s ? path.normalize(s) : "."; },
+    resolve: function (segs, cwd) {
+      var r = "";
+      for (var i = segs.length - 1; i >= 0 && r.charAt(0) !== "/"; i--) { if (segs[i]) r = segs[i] + (r ? "/" + r : ""); }
+      if (r.charAt(0) !== "/") r = cwd + (r ? "/" + r : "");
+      return path.normalize(r);
+    },
+    basename: function (p) { var parts = p.split("/").filter(Boolean); return parts.length ? parts[parts.length - 1] : ""; },
+    extname: function (p) { var b = path.basename(p); var i = b.lastIndexOf("."); return i > 0 ? b.slice(i) : ""; },
+    dirname: function (p) { var i = p.lastIndexOf("/"); if (i < 0) return "."; return i === 0 ? "/" : p.slice(0, i); }
+  };
+  function renderPath() {
+    var segs = $("p-segs").value.split(",").map(function (s) { return s.trim(); });
+    var cwd = $("p-cwd").value.trim() || "/";
+    var joined = path.join(segs);
+    kv($("p-out"), [
+      ["path.join(...)", JSON.stringify(joined)],
+      ["path.resolve(...)", JSON.stringify(path.resolve(segs, cwd))],
+      ["path.basename(joined)", JSON.stringify(path.basename(joined))],
+      ["path.extname(joined)", JSON.stringify(path.extname(joined))],
+      ["path.dirname(joined)", JSON.stringify(path.dirname(joined))],
+      ["path.isAbsolute(joined)", String(joined.charAt(0) === "/")]
+    ]);
+  }
+  ["p-segs", "p-cwd"].forEach(function (id) { $(id).addEventListener("input", renderPath); });
+
+  var disk = { "notes/todo.txt": "learn Express", "config.json": '{ "port": 3000 }' };
+  function renderDisk() {
+    var list = $("f-list"); list.replaceChildren();
+    Object.keys(disk).sort().forEach(function (name) {
+      var li = el("li"); li.append(el("span", "", name), el("span", "mute", disk[name].length + " bytes")); list.append(li);
+    });
+    if (!Object.keys(disk).length) list.append(el("li", "mute", "(disk is empty)"));
+  }
+  function fsOut(text, cls) { var o = $("f-out"); o.textContent = text; o.className = "wrap " + (cls || ""); }
+  document.querySelectorAll("[data-fs]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var name = path.normalize($("f-name").value.trim() || "untitled.txt");
+      var op = b.getAttribute("data-fs");
+      if (op === "write") { disk[name] = $("f-body").value; fsOut('fs.writeFileSync("' + name + '", ...)\nwrote ' + disk[name].length + " bytes", "ok"); }
+      if (op === "read") {
+        if (name in disk) fsOut('fs.readFileSync("' + name + '", "utf8")\n=> ' + JSON.stringify(disk[name]), "ok");
+        else fsOut("Error: ENOENT: no such file or directory, open '" + name + "'", "bad");
+      }
+      if (op === "exists") fsOut('fs.existsSync("' + name + '")\n=> ' + String(name in disk), name in disk ? "ok" : "sig");
+      if (op === "list") {
+        var dir = name.indexOf("/") > -1 ? path.dirname(name) : ".";
+        var names = Object.keys(disk).filter(function (k) { return dir === "." ? k.indexOf("/") < 0 : path.dirname(k) === dir; }).map(path.basename);
+        fsOut('fs.readdirSync("' + dir + '")\n=> ' + JSON.stringify(names), "ok");
+      }
+      if (op === "unlink") {
+        if (name in disk) { delete disk[name]; fsOut('fs.unlinkSync("' + name + '")\nfile removed', "ok"); }
+        else fsOut("Error: ENOENT: no such file or directory, unlink '" + name + "'", "bad");
+      }
+      renderDisk();
+    });
+  });
+
+  var started = Date.now();
+  function renderProcess() {
+    var port = $("pr-port").value.trim();
+    kv($("pr-out"), [
+      ["process.env.PORT", JSON.stringify(port || undefined)],
+      ["Port the server uses", "process.env.PORT || 3000 = " + (port || "3000")],
+      ["process.argv", '["node", "server.js"]'],
+      ["process.platform", '"linux"'],
+      ["process.version", '"v22.x"'],
+      ["process.uptime()", ((Date.now() - started) / 1000).toFixed(1) + " s"]
+    ]);
+  }
+  $("pr-port").addEventListener("input", renderProcess);
+  setInterval(renderProcess, 1000);
+
+  function renderMath() { $("m-out").textContent = String(Number($("m-a").value) + Number($("m-b").value)); }
+  ["m-a", "m-b"].forEach(function (id) { $(id).addEventListener("input", renderMath); });
+
+  /* ================= TAB 2 ================= */
+  var DEPS = [["express", "^4.19.2"], ["dotenv", "^16.4.5"], ["cors", "^2.8.5"]];
+  var DEV = [["nodemon", "^3.1.0"]];
+  function buildChecks(host, items, checked) {
+    items.forEach(function (it) {
+      var label = el("label", "check"); var cb = document.createElement("input"); cb.type = "checkbox"; cb.value = it[0];
+      cb.checked = checked.indexOf(it[0]) > -1; cb.addEventListener("change", renderNpm);
+      label.append(cb, el("span", "", it[0] + "  " + it[1])); host.append(label);
+    });
+  }
+  buildChecks($("n-deps"), DEPS, ["express"]);
+  buildChecks($("n-dev"), DEV, []);
+  function picked(host) { return Array.prototype.slice.call(host.querySelectorAll("input:checked")).map(function (c) { return c.value; }); }
+  function renderNpm() {
+    var name = ($("n-name").value.trim() || "my-app").toLowerCase().replace(/[^a-z0-9-_.]/g, "-");
+    var entry = $("n-entry").value.trim() || "index.js";
+    var deps = picked($("n-deps")), dev = picked($("n-dev"));
+    var cmds = ["mkdir " + name, "cd " + name, "npm init -y"];
+    if (deps.length) cmds.push("npm install " + deps.join(" "));
+    if (dev.length) cmds.push("npm install -D " + dev.join(" "));
+    cmds.push("node " + entry + "    # run it");
+    $("n-cmds").textContent = cmds.join("\n");
+    var pkg = { name: name, version: "1.0.0", main: entry, scripts: { start: "node " + entry } };
+    if (dev.indexOf("nodemon") > -1) pkg.scripts.dev = "nodemon " + entry;
+    pkg.license = "ISC";
+    var d = {}; DEPS.forEach(function (x) { if (deps.indexOf(x[0]) > -1) d[x[0]] = x[1]; });
+    var dd = {}; DEV.forEach(function (x) { if (dev.indexOf(x[0]) > -1) dd[x[0]] = x[1]; });
+    if (Object.keys(d).length) pkg.dependencies = d;
+    if (Object.keys(dd).length) pkg.devDependencies = dd;
+    $("n-json").textContent = JSON.stringify(pkg, null, 2);
+  }
+  ["n-name", "n-entry"].forEach(function (id) { $(id).addEventListener("input", renderNpm); });
+  $("n-copy1").addEventListener("click", function () { copy($("n-cmds").textContent, this); });
+  $("n-copy2").addEventListener("click", function () { copy($("n-json").textContent, this); });
+
+  /* ================= TAB 3 ================= */
+  function rawServer(method, rawUrl, body) {
+    var trace = [];
+    var url = new URL(rawUrl, "http://localhost:3001");
+    trace.push("request received: " + method + " " + rawUrl);
+    trace.push("new URL(...) -> pathname=" + url.pathname + (url.search ? ", search=" + url.search : ""));
+    function json(status, data) { return { status: status, type: "application/json", body: JSON.stringify(data) }; }
+    var res;
+    if (method === "GET" && url.pathname === "/time") { trace.push("matched: GET /time"); res = json(200, { now: new Date().toISOString() }); }
+    else if (method === "GET" && url.pathname === "/greet") {
+      trace.push("matched: GET /greet");
+      var name = url.searchParams.get("name") || "stranger";
+      trace.push("searchParams.get(\"name\") -> " + JSON.stringify(name));
+      res = json(200, { message: "Hello, " + name + "!" });
+    } else if (method === "POST" && url.pathname === "/echo") {
+      trace.push("matched: POST /echo");
+      var chunks = body.match(/[\s\S]{1,6}/g) || [];
+      chunks.forEach(function (c, i) { trace.push("req.on('data') chunk " + (i + 1) + ": " + JSON.stringify(c)); });
+      trace.push("req.on('end') -> body fully received (" + body.length + " chars)");
+      res = json(200, { youSent: body, length: body.length });
+    } else { trace.push("no route matched"); res = { status: 404, type: "text/plain", body: "Not found" }; }
+    trace.push("res.writeHead(" + res.status + ") and res.end(...)");
+    return { trace: trace, res: res };
+  }
+  function runRaw() {
+    var out = rawServer($("r-method").value, $("r-path").value.trim() || "/", $("r-body").value);
+    $("r-trace").textContent = out.trace.join("\n");
+    var s = $("r-status"); s.textContent = out.res.status + (out.res.status === 200 ? " OK" : " Not Found"); s.className = "status " + (out.res.status < 400 ? "ok" : "bad");
+    $("r-resp").textContent = "Content-Type: " + out.res.type + "\n\n" + out.res.body;
+  }
+  $("r-send").addEventListener("click", runRaw);
+  document.querySelectorAll("[data-raw]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var p = b.getAttribute("data-raw").split("|");
+      $("r-method").value = p[0]; $("r-path").value = p[1]; $("r-body").value = p[2]; runRaw();
+    });
+  });
+
+  /* ================= TAB 4 ================= */
+  var notes = [
+    { id: "seed-1", text: "Node runs JavaScript outside the browser." },
+    { id: "seed-2", text: "require() loads a CommonJS module." }
+  ];
+  var STEPS = [
+    { id: "logger", label: "app.use(logger)", note: "Custom middleware. Logs the request, then calls next().", kind: "mw" },
+    { id: "json", label: "app.use(express.json())", note: "Parses a JSON body into req.body.", kind: "mw" },
+    { id: "static", label: "app.use(express.static('public'))", note: "Serves files such as / and /style.css.", kind: "mw" },
+    { id: "router", label: "app.use('/api', routes)", note: "Route handlers: the part that does the real work.", kind: "mw" },
+    { id: "notfound", label: "app.use(404 handler)", note: "Runs only if nothing above answered.", kind: "mw" },
+    { id: "error", label: "app.use((err, req, res, next) => ...)", note: "Four arguments: Express treats it as the error handler.", kind: "err" }
+  ];
+  var enabled = {}; STEPS.forEach(function (s) { enabled[s.id] = true; });
+  STEPS.forEach(function (s) {
+    var label = el("label", "check"); var cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = true;
+    cb.addEventListener("change", function () { enabled[s.id] = cb.checked; });
+    label.append(cb, el("span", "", s.label)); $("x-toggles").append(label);
+  });
+
+  function expressRun(method, rawUrl, bodyText) {
+    var url = new URL(rawUrl, "http://localhost:3000");
+    var req = { method: method, path: url.pathname, query: url.searchParams, body: undefined, params: {} };
+    var logs = [];
+    var res = null, error = null;
+    var trace = STEPS.map(function (s) { return { step: s, state: "pending", detail: "" }; });
+    var staticFiles = { "/": "index.html", "/style.css": "style.css", "/app.js": "app.js" };
+
+    function mark(i, state, detail) { trace[i].state = state; trace[i].detail = detail; }
+
+    for (var i = 0; i < STEPS.length; i++) {
+      var s = STEPS[i];
+      if (res) { mark(i, "skip", "not reached: a response was already sent"); continue; }
+      if (error && s.kind !== "err") { mark(i, "skip", "skipped: an error is being handled"); continue; }
+      if (!error && s.kind === "err") { mark(i, "skip", "not reached: no error occurred"); continue; }
+      if (!enabled[s.id]) { mark(i, "skip", "switched off"); continue; }
+
+      if (s.id === "logger") {
+        logs.push(method + " " + rawUrl); mark(i, "ran", "logged the request, called next()");
+      } else if (s.id === "json") {
+        if ((method === "POST" || method === "PUT") && bodyText.trim()) {
+          try { req.body = JSON.parse(bodyText); mark(i, "ran", "set req.body = " + JSON.stringify(req.body) + ", called next()"); }
+          catch (e) { error = { status: 400, message: e.message }; mark(i, "err", "JSON.parse failed, called next(err) with status 400"); }
+        } else mark(i, "ran", "no body to parse, called next()");
+      } else if (s.id === "static") {
+        if (method === "GET" && staticFiles[req.path]) { res = { status: 200, type: "text/html", body: "(contents of public/" + staticFiles[req.path] + ")" }; mark(i, "resp", "found public/" + staticFiles[req.path] + ", sent it"); }
+        else mark(i, "ran", "no matching file, called next()");
+      } else if (s.id === "router") {
+        var m;
+        try {
+          if (method === "GET" && req.path === "/api/notes") { res = { status: 200, json: notes }; mark(i, "resp", "GET /api/notes matched, res.json(notes)"); }
+          else if (method === "POST" && req.path === "/api/notes") {
+            var text = typeof req.body.text === "string" ? req.body.text.trim() : "";
+            if (!text) { res = { status: 400, json: { error: "Field 'text' is required." } }; mark(i, "resp", "POST /api/notes matched, validation failed, sent 400"); }
+            else { var note = { id: "n" + (notes.length + 1), text: text }; notes.unshift(note); res = { status: 201, json: note }; mark(i, "resp", "POST /api/notes matched, saved note, sent 201"); }
+          } else if (method === "GET" && (m = req.path.match(/^\/api\/hello\/([^/]+)$/))) {
+            req.params.name = decodeURIComponent(m[1]);
+            var g = "Hello, " + req.params.name + "!";
+            res = { status: 200, json: { message: req.query.get("shout") === "true" ? g.toUpperCase() : g } };
+            mark(i, "resp", "matched /api/hello/:name with req.params.name = " + JSON.stringify(req.params.name));
+          } else if (method === "DELETE" && (m = req.path.match(/^\/api\/notes\/([^/]+)$/))) {
+            var before = notes.length; notes = notes.filter(function (n) { return n.id !== m[1]; });
+            if (notes.length === before) { res = { status: 404, json: { error: "No note with that id." } }; mark(i, "resp", "DELETE matched, id not found, sent 404"); }
+            else { res = { status: 204 }; mark(i, "resp", "DELETE matched, removed note, sent 204"); }
+          } else mark(i, "ran", "no route matched, called next()");
+        } catch (e) { error = { status: 500, message: e.message }; mark(i, "err", "handler threw: " + e.message); }
+      } else if (s.id === "notfound") {
+        res = { status: 404, json: { error: "Not found: " + method + " " + rawUrl } }; mark(i, "resp", "sent 404");
+      } else if (s.id === "error") {
+        res = { status: error.status, json: { error: error.status === 500 ? "Server error" : error.message } };
+        mark(i, "resp", "handled the error, sent " + error.status);
+        logs.push("error: " + error.message); error = null;
+      }
+    }
+    // Express's built-in fallbacks when our own handlers are switched off.
+    if (!res && error) res = { status: error.status, type: "text/html", body: "<pre>" + error.message + "</pre>\n(Express default error page)" };
+    if (!res) res = { status: 404, type: "text/html", body: "Cannot " + method + " " + req.path + "\n(Express default 404 page)" };
+    return { trace: trace, res: res, logs: logs };
+  }
+
+  var xLog = [];
+  var STATUS = { 200: "OK", 201: "Created", 204: "No Content", 400: "Bad Request", 404: "Not Found", 500: "Internal Server Error" };
+  function runExpress() {
+    var out = expressRun($("x-method").value, $("x-path").value.trim() || "/", $("x-body").value);
+    var chain = $("x-chain"); chain.replaceChildren();
+    out.trace.forEach(function (t) {
+      var cls = t.state === "resp" ? "resp ran" : t.state === "err" ? "err ran" : t.state === "ran" ? "ran" : "skip";
+      var li = el("li", cls); li.append(el("span", "dot"));
+      var box = el("div"); box.append(document.createTextNode(t.step.label));
+      var detail = el("small", "", t.detail || t.step.note); box.append(detail); li.append(box); chain.append(li);
+    });
+    var r = out.res;
+    var s = $("x-status"); s.textContent = r.status + " " + (STATUS[r.status] || ""); s.className = "status " + (r.status < 400 ? "ok" : "bad");
+    $("x-resp").textContent = r.json !== undefined ? "Content-Type: application/json\n\n" + JSON.stringify(r.json, null, 2) : r.body ? "Content-Type: " + (r.type || "text/plain") + "\n\n" + r.body : "(empty body)";
+    out.logs.forEach(function (l) { xLog.unshift(l); }); xLog = xLog.slice(0, 8);
+    $("x-log").textContent = xLog.join("\n") || "(empty)";
+  }
+  $("x-send").addEventListener("click", runExpress);
+  document.querySelectorAll("[data-x]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var p = b.getAttribute("data-x").split("|");
+      $("x-method").value = p[0]; $("x-path").value = p[1]; $("x-body").value = p.slice(2).join("|"); runExpress();
+    });
+  });
+
+  /* ---------- Initial state: every tab opens already populated ---------- */
+  renderPath(); renderDisk(); renderProcess(); renderMath(); renderNpm();
+  fsOut('fs.readFileSync("notes/todo.txt", "utf8")\n=> "learn Express"', "ok");
+  runRaw(); runExpress();
+})();
+</script>
+
+</body></html>
